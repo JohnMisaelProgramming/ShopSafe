@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — {{ product.name }}{% endblock %}
+
+{% block content %}
+<!-- Product Detail card -->
+<div class="card border border-light p-4 bg-white shadow-sm mb-5">
+    <div class="row g-4">
+        <!-- Product Image -->
+        <div class="col-md-6 text-center">
+            <img src="{{ product.image_url }}" class="img-fluid rounded-4 object-fit-cover w-100" alt="{{ product.name }}" style="max-height: 400px;">
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-md-6 d-flex flex-column justify-content-between">
+            <div>
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'products' %}">Products</a></li>
+                        <li class="breadcrumb-item active">{{ product.category }}</li>
+                    </ol>
+                </nav>
+
+                <h1 class="fw-bold text-dark mb-2">{{ product.name }}</h1>
+                <span class="badge bg-primary-subtle text-primary mb-3">{{ product.category }}</span>
+                
+                <h3 class="fw-bold text-primary mb-3">${{ product.price }}</h3>
+                <p class="text-muted leading-relaxed">{{ product.description }}</p>
+                
+                <hr class="border-light my-4">
+                
+                <!-- Stock status -->
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span class="fw-semibold">Availability:</span>
+                    <span class="{% if product.stock > 0 %}text-success{% else %}text-danger{% endif %} fw-semibold">
+                        <i class="bi {% if product.stock > 0 %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+                        {% if product.stock > 0 %}{{ product.stock }} items available{% else %}Out of Stock{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Simulated Purchase Form (Sends a POST request, creating traffic metadata to verify blocks/rates) -->
+            <form action="{% url 'product_detail' product.id %}" method="POST" class="bg-light p-3 rounded-3 border border-light">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <div class="w-25">
+                        <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ product.stock }}" {% if product.stock == 0 %}disabled{% endif %}>
+                    </div>
+                    <button type="submit" class="btn btn-primary flex-grow-1" {% if product.stock == 0 %}disabled{% endif %}>
+                        <i class="bi bi-cart-plus-fill me-2"></i>Buy Now (Simulate Checkout POST)
+                    </button>
+                </div>
+                <div class="form-text mt-2 text-muted text-center"><i class="bi bi-info-circle me-1"></i> Checkout submissions generate log data in NetWatch.</div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Related Products -->
+<div>
+    <h4 class="fw-bold mb-4">Related Security Gadgets</h4>
+    <div class="row g-4">
+        {% for rel in related_products %}
+            <div class="col-md-4">
+                <div class="card h-100 border border-light">
+                    <img src="{{ rel.image_url }}" class="card-img-top object-fit-cover" alt="{{ rel.name }}" style="height: 180px; border-radius: 12px 12px 0 0;">
+                    <div class="card-body d-flex flex-column">
+                        <span class="badge bg-secondary-subtle text-secondary align-self-start mb-2">{{ rel.category }}</span>
+                        <h6 class="card-title fw-bold text-dark mb-2">{{ rel.name }}</h6>
+                        <p class="card-text text-muted small flex-grow-1">{{ rel.description|truncatewords:10 }}</p>
+                        <a href="{% url 'product_detail' rel.id %}" class="btn btn-sm btn-outline-primary mt-3 w-100 fw-semibold">View Info</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted">No other items in this category.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

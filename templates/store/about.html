@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — About Us{% endblock %}
+
+{% block content %}
+<div class="card border border-light p-5 bg-white shadow-sm mb-5">
+    <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+            <h1 class="fw-bold mb-4 text-dark"><i class="bi bi-info-circle-fill text-primary me-2"></i>About ShopSafe</h1>
+            <p class="lead text-muted">We provide physical cybersecurity solutions for the modern remote work era.</p>
+            <p class="text-muted leading-relaxed">ShopSafe was founded to make robust cyber defense hardware accessible to everyone. From physical webcam blockers to complex encrypted local storage arrays and gateway firewalls, we source the highest grade of tech security tools available.</p>
+            <p class="text-muted leading-relaxed">Our mission is straightforward: to secure your home, work, and personal networks against physical and digital intrusions. Every product we list is vetted, tested, and shipped in tamper-evident packaging to maintain absolute integrity.</p>
+            
+            <div class="row g-4 mt-3">
+                <div class="col-6">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success fs-3"></i>
+                        <div>
+                            <h6 class="fw-bold mb-0">100% Vetted Tech</h6>
+                            <span class="small text-muted">Vulnerability assessed</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-truck text-primary fs-3"></i>
+                        <div>
+                            <h6 class="fw-bold mb-0">Secure Shipping</h6>
+                            <span class="small text-muted">Tamper-evident seals</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 text-center">
+            <div class="p-5 bg-light rounded-4 border border-light shadow-inner">
+                <i class="bi bi-building-lock text-primary" style="font-size: 8rem;"></i>
+                <h5 class="fw-bold mt-3 text-dark">ShopSafe Labs</h5>
+                <p class="small text-muted">Where our secure hardware and network appliances are tested and audited prior to catalog listing.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

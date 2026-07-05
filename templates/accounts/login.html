@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — User Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="card border border-light p-4 bg-white shadow-sm">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3rem;"></i>
+                <h3 class="fw-bold text-dark mt-2">Sign In</h3>
+                <p class="text-muted small">Access your ShopSafe customer account</p>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-3 mt-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                </button>
+            </form>
+            
+            <hr class="border-light my-4">
+            
+            <div class="text-center">
+                <p class="small text-muted mb-0">Don't have an account? <a href="{% url 'register' %}" class="fw-semibold text-decoration-none text-primary">Register Here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

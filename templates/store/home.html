@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — Secure Tech and Smart Home Cybersecurity{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="p-5 mb-5 bg-white rounded-4 shadow-sm border border-light position-relative overflow-hidden" style="background: linear-gradient(135deg, #ffffff 60%, #e0f2fe 100%);">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <span class="badge bg-info text-dark px-3 py-2 rounded-pill mb-3 fw-semibold">NEW DEPLOYMENT ARRIVED</span>
+            <h1 class="display-4 fw-bold text-dark mb-3" style="letter-spacing: -1px;">Secure Your Digital Home.</h1>
+            <p class="lead text-muted mb-4">ShopSafe is the first storefront dedicated to hardware-encrypted storage, network security firewalls, and smart secure home appliances. Take control of your data privacy today.</p>
+            <div class="d-flex gap-3">
+                <a href="{% url 'products' %}" class="btn btn-primary btn-lg px-4"><i class="bi bi-cart3 me-2"></i>Browse Products</a>
+                <a href="{% url 'about' %}" class="btn btn-outline-secondary btn-lg px-4">Learn More</a>
+            </div>
+        </div>
+        <div class="col-lg-5 d-none d-lg-block text-center">
+            <i class="bi bi-shield-lock text-primary" style="font-size: 12rem; opacity: 0.8; filter: drop-shadow(0 10px 15px rgba(59, 130, 246, 0.2));"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Products Section -->
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Featured Tech</h2>
+            <p class="text-muted mb-0">Our top-selling hardware security modules and accessories.</p>
+        </div>
+        <a href="{% url 'products' %}" class="btn btn-link text-decoration-none fw-semibold">View Catalog <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row g-4">
+        {% for product in featured_products %}
+            <div class="col-md-4">
+                <div class="card h-100 border border-light">
+                    <!-- Standard card layout with placeholder or actual image -->
+                    <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" alt="{{ product.name }}" style="height: 220px; border-radius: 12px 12px 0 0;">
+                    <div class="card-body d-flex flex-column">
+                        <span class="badge bg-secondary-subtle text-secondary align-self-start mb-2">{{ product.category }}</span>
+                        <h5 class="card-title fw-bold text-dark mb-2">{{ product.name }}</h5>
+                        <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-light">
+                            <span class="fs-5 fw-bold text-primary">${{ product.price }}</span>
+                            <span class="small {% if product.stock > 0 %}text-success{% else %}text-danger{% endif %}">
+                                <i class="bi {% if product.stock > 0 %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %} me-1"></i>
+                                {% if product.stock > 0 %}{{ product.stock }} in stock{% else %}Out of Stock{% endif %}
+                            </span>
+                        </div>
+                        
+                        <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary w-100 mt-3 rounded-8 fw-semibold">View Details</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Loading product database...</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SOC Monitoring Banner -->
+<div class="p-4 bg-dark text-white rounded-4 shadow-sm border border-secondary mb-5">
+    <div class="row align-items-center">
+        <div class="col-md-8 mb-3 mb-md-0 text-center text-md-start">
+            <h4 class="fw-bold text-warning mb-1"><i class="bi bi-shield-fill-check me-2"></i>Secured by NetWatch Systems</h4>
+            <p class="mb-0 text-white-50">This site is monitored in real-time. Unusually high request rates, multiple failed registrations, and DDoS patterns are automatically resolved, flagged, and blocked.</p>
+        </div>
+        <div class="col-md-4 text-center text-md-end">
+            <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="bi bi-activity me-1"></i> REAL-TIME INGEST ACTIVE</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

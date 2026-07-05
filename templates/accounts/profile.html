@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — My Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border border-light p-4 bg-white shadow-sm">
+            <div class="d-flex align-items-center gap-4 mb-4">
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle border border-primary-subtle" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-person-fill fs-1"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold text-dark mb-1">{{ user.username }}</h3>
+                    <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i>Active Customer Profile</span>
+                </div>
+            </div>
+            
+            <h5 class="fw-bold mb-3 text-dark border-bottom border-light pb-2">Account Details</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <span class="small text-muted fw-semibold">Email Address</span>
+                    <p class="text-dark mb-0">{{ user.email|default:"None registered" }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <span class="small text-muted fw-semibold">Joined On</span>
+                    <p class="text-dark mb-0">{{ user.date_joined|date:"M d, Y H:i" }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <span class="small text-muted fw-semibold">Last Session Login</span>
+                    <p class="text-dark mb-0">{{ user.last_login|date:"M d, Y H:i" }}</p>
+                </div>
+                <div class="col-sm-6">
+                    <span class="small text-muted fw-semibold">Secure Token ID</span>
+                    <p class="text-dark mb-0 font-monospace text-truncate" style="font-size: 0.85rem;">ss_usr_{{ user.id }}_sess_active</p>
+                </div>
+            </div>
+
+            <hr class="border-light my-4">
+
+            <div class="alert alert-info border-info-subtle shadow-sm mb-0 d-flex gap-3 align-items-center">
+                <i class="bi bi-shield-lock-fill fs-3 text-info"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Your data is hardware-encrypted</h6>
+                    <p class="small mb-0 text-muted">ShopSafe securely hashes password keys using PBKDF2. Logins and profiles are audited by NetWatch to guard against brute-force intrusion attacks.</p>
+                </div>
+            </div>
+            
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 mt-4 py-2 fw-semibold rounded-3"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
