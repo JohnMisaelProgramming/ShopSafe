@@ -1,8 +1,8 @@
-from django.test import TestCase, Client
-from django.contrib.auth.models import User
-from django.core.cache import cache
-from django.urls import reverse
-from django.utils import timezone
+from django.test import TestCase, Client  # type: ignore
+from django.contrib.auth.models import User  # type: ignore
+from django.core.cache import cache  # type: ignore
+from django.urls import reverse  # type: ignore
+from django.utils import timezone  # type: ignore
 from datetime import timedelta
 
 from accounts.models import OTPVerification, UserLockout
@@ -59,7 +59,7 @@ class SecurityEnhancementTests(TestCase):
             })
             
         # Verify lockout record exists and is active
-        lockout = UserLockout.objects.get(username=self.username)
+        lockout = UserLockout.objects.get(username=self.username)  # type: ignore
         self.assertTrue(lockout.is_locked())
 
     def test_2fa_otp_redirection_flow(self):
@@ -75,6 +75,6 @@ class SecurityEnhancementTests(TestCase):
         self.assertRedirects(response, reverse('verify_2fa'))
         
         # Verify an OTP code was generated in the database
-        otp = OTPVerification.objects.filter(user=self.user, verified=False).first()
+        otp = OTPVerification.objects.filter(user=self.user, verified=False).first()  # type: ignore
         self.assertIsNotNone(otp)
         self.assertEqual(len(otp.otp_code), 6)
