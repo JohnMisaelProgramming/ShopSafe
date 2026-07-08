@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout Processing — ShopSafe{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+        </ol>
+    </nav>
+    <h1 class="fw-bold"><i class="bi bi-wallet2 text-primary me-2"></i>Checkout Pipeline</h1>
+    <p class="text-muted">Review your order details and process simulated secure sandbox payment.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Checkout Form -->
+    <div class="col-lg-7">
+        <div class="card p-4 rounded-4 shadow-sm border border-light mb-4">
+            <h4 class="fw-bold mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Shipping & Billing Information</h4>
+            <form id="checkout-form" method="POST" action="{% url 'checkout' %}{% if product_id %}?product_id={{ product_id }}&qty={{ quantity }}{% endif %}">
+                {% csrf_token %}
+                
+                {% if request.user.is_authenticated and request.user.addresses.exists %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Saved Addresses</label>
+                        <select class="form-select" id="saved-address-select" onchange="useSavedAddress(this)">
+                            <option value="">-- Use a Saved Address --</option>
+                            {% for addr in request.user.addresses.all %}
+                                <option value="{{ addr.street }}, {{ addr.city }}, {{ addr.state }} {{ addr.postal_code }}">
+                                    {{ addr.label }} ({{ addr.street }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="shipping_address" class="form-label fw-semibold">Shipping Address</label>
+                    <textarea class="form-select form-control" id="shipping_address" name="shipping_address" rows="3" placeholder="Enter full shipping address..." required></textarea>
+                </div>
+
+                <hr class="my-4 border-light">
+
+                <h4 class="fw-bold mb-3"><i class="bi bi-credit-card text-primary me-2"></i>Mock Payment Gateway</h4>
+                <div class="alert alert-info py-2 px-3 small border-0 bg-info-subtle text-info d-flex align-items-center mb-4">
+                    <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                    <span><strong>Sandbox Simulation:</strong> No real payment gateway will be charged. Validate with mock credentials.</span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="card_name" class="form-label fw-semibold">Name on Card</label>
+                    <input type="text" class="form-control" id="card_name" name="card_name" placeholder="John Doe" required>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label for="card_number" class="form-label fw-semibold">Card Number</label>
+                        <input type="text" class="form-control" id="card_number" name="card_number" placeholder="4111 2222 3333 4444" required>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label for="card_expiry" class="form-label fw-semibold">Expiry</label>
+                        <input type="text" class="form-control" id="card_expiry" placeholder="MM/YY" required>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label for="card_cvc" class="form-label fw-semibold">CVC</label>
+                        <input type="text" class="form-control" id="card_cvc" placeholder="321" required>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn" class="btn btn-primary btn-lg w-100 rounded-pill fw-semibold py-2.5 mt-4">
+                    <span id="btn-text"><i class="bi bi-shield-lock-fill me-1"></i>Process Secure Payment (${{ total|floatformat:2 }})</span>
+                    <span id="btn-spinner" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Authorizing Sandbox Payment...
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Order Summary -->
+    <div class="col-lg-5">
+        <!-- Order Summary Card -->
+        <div class="card p-4 rounded-4 shadow-sm border border-light mb-4">
+            <h4 class="fw-bold mb-3">Order Summary</h4>
+            <div class="list-group list-group-flush mb-3">
+                {% for item in cart_items %}
+                    <div class="list-group-item px-0 py-3 d-flex align-items-center">
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="rounded-3 border border-light object-fit-cover me-3" style="width: 60px; height: 60px;">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-dark mb-0">{{ item.product.name }}</h6>
+                            <small class="text-muted">{{ item.quantity }}x @ ${{ item.price }}</small>
+                        </div>
+                        <span class="fw-bold text-dark">${{ item.total|floatformat:2 }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Coupon Code Section -->
+            <form method="POST" action="{% url 'apply_coupon' %}{% if product_id %}?product_id={{ product_id }}&qty={{ quantity }}{% endif %}" class="mb-4">
+                {% csrf_token %}
+                <label class="form-label fw-semibold small text-muted">HAVE A COUPON CODE?</label>
+                <div class="input-group">
+                    <input type="text" class="form-control uppercase" name="coupon_code" placeholder="SAVE10, CYBER50" value="{{ coupon.code|default:'' }}">
+                    <button class="btn btn-outline-secondary" type="submit">Apply</button>
+                </div>
+            </form>
+
+            <div class="pt-3 border-top border-light">
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Subtotal</span>
+                    <span class="fw-semibold text-dark">${{ subtotal|floatformat:2 }}</span>
+                </div>
+                {% if coupon %}
+                    <div class="d-flex justify-content-between mb-2 small text-success">
+                        <span>Discount Coupon ({{ coupon.code }})</span>
+                        <span>-${{ discount|floatformat:2 }}</span>
+                    </div>
+                {% endif %}
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Estimated Tax (10%)</span>
+                    <span class="fw-semibold text-dark">${{ tax|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3 small">
+                    <span class="text-muted">Shipping Fee</span>
+                    <span class="fw-semibold text-dark">
+                        {% if shipping == 0 %}
+                            <span class="text-success">FREE</span>
+                        {% else %}
+                            ${{ shipping|floatformat:2 }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between pt-3 border-top border-light">
+                    <span class="fw-bold fs-5 text-dark">Total</span>
+                    <span class="fw-bold fs-5 text-primary">${{ total|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function useSavedAddress(select) {
+        const address = select.value;
+        const textarea = document.getElementById('shipping_address');
+        if (address) {
+            textarea.value = address;
+        }
+    }
+
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+
+        // Disable input during simulated processing
+        submitBtn.disabled = true;
+        btnText.classList.add('d-none');
+        btnSpinner.classList.remove('d-none');
+        
+        // Let it submit naturally
+    });
+</script>
+{% endblock %}

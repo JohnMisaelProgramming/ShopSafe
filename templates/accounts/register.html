@@ -12,28 +12,139 @@
                 <p class="text-muted small">Register as a ShopSafe customer</p>
             </div>
             
-            <form method="POST">
+            <form method="POST" id="register-form">
                 {% csrf_token %}
                 
                 {% for field in form %}
+                    {% if field.name == 'accept_terms' %}
+                        <div class="mb-3">
+                            <div class="form-check d-flex align-items-center">
+                                {{ field }}
+                                <label class="form-check-label small text-muted ms-2" for="{{ field.id_for_label }}">
+                                    I accept the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-decoration-none fw-semibold">Terms &amp; Conditions</a>
+                                </label>
+                            </div>
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted small">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text small text-muted" style="font-size: 0.75rem;">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if recaptcha_site_key %}
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-muted small">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.help_text %}
-                            <div class="form-text small text-muted" style="font-size: 0.75rem;">{{ field.help_text }}</div>
+                        <div class="d-flex justify-content-center">
+                            <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                        </div>
+                        {% if recaptcha_error %}
+                            <div class="text-danger small mt-2 text-center" id="recaptcha-error">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>{{ recaptcha_error }}
+                            </div>
                         {% endif %}
                     </div>
-                {% endfor %}
+                {% endif %}
                 
                 <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-3 mt-3">
                     <i class="bi bi-person-check-fill me-2"></i>Sign Up
                 </button>
             </form>
+
+            <div class="text-center mt-3">
+                <span class="badge bg-light text-muted border border-light py-2 px-3 fw-normal" style="font-size: 11px;">
+                    <i class="bi bi-shield-check text-success me-1"></i> Secured by Google reCAPTCHA v2
+                </span>
+            </div>
             
             <hr class="border-light my-4">
             
             <div class="text-center">
                 <p class="small text-muted mb-0">Already registered? <a href="{% url 'login' %}" class="fw-semibold text-decoration-none text-primary">Login Here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('register-form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            const response = grecaptcha.getResponse();
+            if (!response || response.length === 0) {
+                event.preventDefault();
+                let errDiv = document.getElementById('recaptcha-error');
+                if (!errDiv) {
+                    errDiv = document.createElement('div');
+                    errDiv.id = 'recaptcha-error';
+                    errDiv.className = 'text-danger small mt-2 text-center';
+                    errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Please check the reCAPTCHA box before signing up.';
+                    const recaptchaWrapper = document.querySelector('.g-recaptcha');
+                    if (recaptchaWrapper) {
+                        recaptchaWrapper.parentNode.appendChild(errDiv);
+                    }
+                } else {
+                    errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Please check the reCAPTCHA box before signing up.';
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+
+
+<!-- Terms & Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content text-dark">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="termsModalLabel">
+                    <i class="bi bi-file-earmark-ruled me-2"></i>ShopSafe Terms &amp; Conditions
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-dark" style="font-size: 14px; line-height: 1.6;">
+                <h6 class="fw-bold text-primary">1. Acceptance of Terms</h6>
+                <p>Welcome to ShopSafe. By creating an account, browsing our product catalog, or using any feature on our platform, you agree to comply with and be bound by these terms. If you do not agree to these terms, please do not access or use the platform.</p>
+                
+                <h6 class="fw-bold text-primary mt-3">2. Account Security &amp; 2FA Requirements</h6>
+                <p>To protect customer profiles from credential stuffing and unauthorized access, ShopSafe enforces a strict password complexity policy and mandatory Two-Factor Authentication (2FA) verification via one-time passcodes (OTP) dispatched to your registered email address. You are solely responsible for maintaining the confidentiality of your login credentials and one-time passcodes.</p>
+                
+                <h6 class="fw-bold text-primary mt-3">3. Anti-Abuse &amp; Telemetry Auditing</h6>
+                <p>To maintain high availability and defend our e-commerce operations against Denial of Service (DDoS) and intrusion attempts, our platform uses automated monitoring systems. We track and record your client source IP, request rate, session activity, browser metadata, page latency, and database query metrics. This performance and security telemetry is streamed in real-time to the NetWatch threat detection platform.</p>
+
+                <h6 class="fw-bold text-primary mt-3">4. Order Processing, Coupons &amp; Flash Sales</h6>
+                <p>All items in your cart are subject to real-time stock availability and safety limits. We reserve the right to restrict promotional coupon usage, adjust cart prices during active flash sale events, and cancel pending orders that exceed stock thresholds or trigger abuse detection rules. Transactions are simulated for educational evaluation purposes.</p>
+
+                <h6 class="fw-bold text-primary mt-3">5. Prohibited Activities</h6>
+                <p>Any attempt to bypass security controls, automate account registrations, script brute-force login attempts, or simulate application-layer flood attacks on this storefront without express permission from the NetWatch system administrators is strictly prohibited and will result in IP blocking and account suspension.</p>
+
+                <h6 class="fw-bold text-primary mt-3">6. Limitation of Liability</h6>
+                <p>ShopSafe is provided "as is" for educational and cybersecurity evaluation. We make no warranties regarding platform uptime, data permanence, or server availability during threat simulation labs. We reserve the right to toggle Maintenance Mode or suspend access queues at any time.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Analytics Control Center — ShopSafe{% endblock %}
+
+{% block content %}
+<!-- Include Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Admin Dashboard</li>
+        </ol>
+    </nav>
+    <h1 class="fw-bold"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Sales & Operations Analytics</h1>
+    <p class="text-muted">Business intelligence dashboard tracking product inventory warnings, customer growth, and revenue statistics.</p>
+</div>
+
+<!-- Key Metric Cards Row -->
+<div class="row g-4 mb-4">
+    <!-- Revenue -->
+    <div class="col-md-4">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white text-dark h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small text-muted fw-bold text-uppercase">Total Gross Revenue</span>
+                <span class="rounded bg-success bg-opacity-10 p-2 text-success"><i class="bi bi-currency-dollar fs-5"></i></span>
+            </div>
+            <h2 class="fw-bold m-0">${{ total_revenue|floatformat:2 }}</h2>
+            <small class="text-success mt-2 d-block"><i class="bi bi-arrow-up-right me-1"></i>+12.4% from last week</small>
+        </div>
+    </div>
+    
+    <!-- Orders -->
+    <div class="col-md-4">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white text-dark h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small text-muted fw-bold text-uppercase">Total Orders Logged</span>
+                <span class="rounded bg-primary bg-opacity-10 p-2 text-primary"><i class="bi bi-cart-check fs-5"></i></span>
+            </div>
+            <h2 class="fw-bold m-0">{{ total_orders }}</h2>
+            <small class="text-muted mt-2 d-block">Sandbox checkout tracking engine</small>
+        </div>
+    </div>
+
+    <!-- Customers -->
+    <div class="col-md-4">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white text-dark h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small text-muted fw-bold text-uppercase">Registered Accounts</span>
+                <span class="rounded bg-info bg-opacity-10 p-2 text-info"><i class="bi bi-people fs-5"></i></span>
+            </div>
+            <h2 class="fw-bold m-0">{{ total_customers }}</h2>
+            <small class="text-muted mt-2 d-block">Customer profile analytics base</small>
+        </div>
+    </div>
+</div>
+
+<!-- Low Stock Warnings Alert -->
+{% if low_stock_products %}
+<div class="alert alert-warning border-0 bg-warning bg-opacity-15 text-warning-emphasis rounded-4 p-4 mb-4">
+    <h5 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Critical Inventory Replenishment Alert</h5>
+    <p class="small mb-3">The following items have dropped below their defined safety threshold limits:</p>
+    <div class="table-responsive">
+        <table class="table table-sm table-borderless align-middle m-0 text-warning-emphasis">
+            <thead>
+                <tr class="small text-uppercase">
+                    <th>Product</th>
+                    <th class="text-center">Stock</th>
+                    <th class="text-center">Min Threshold</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prod in low_stock_products %}
+                    <tr class="small border-top border-warning-subtle">
+                        <td><strong>{{ prod.name }}</strong> ({{ prod.brand }})</td>
+                        <td class="text-center fw-bold">{{ prod.stock }} units</td>
+                        <td class="text-center">{{ prod.low_stock_threshold }} units</td>
+                        <td><span class="badge bg-danger rounded-pill">RESTOCK REQUIRED</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Daily Revenue Chart -->
+    <div class="col-lg-7">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white h-100">
+            <h5 class="fw-bold mb-4">Daily Sales Analytics (Last 7 Days)</h5>
+            <div style="height: 300px; position: relative;">
+                <canvas id="dailySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Best Sellers -->
+    <div class="col-lg-5">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white h-100">
+            <h5 class="fw-bold mb-4">Top 5 Best-Selling Products</h5>
+            <div class="table-responsive">
+                <table class="table align-middle border-light m-0">
+                    <thead>
+                        <tr class="small text-muted text-uppercase">
+                            <th>Product</th>
+                            <th class="text-center">Sold</th>
+                            <th class="text-end">Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in best_sellers %}
+                            <tr>
+                                <td><span class="fw-bold text-dark small">{{ item.product__name }}</span></td>
+                                <td class="text-center fw-semibold small">{{ item.total_sold }}</td>
+                                <td class="text-end fw-bold text-primary small">${{ item.revenue|floatformat:2 }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted small py-4">No order items sold yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Shipment Log -->
+<div class="card p-4 rounded-4 shadow-sm border border-light bg-white mb-4">
+    <h5 class="fw-bold mb-3">Pending Fulfillment Operations</h5>
+    <div class="table-responsive">
+        <table class="table align-middle border-light">
+            <thead>
+                <tr class="small text-muted text-uppercase">
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Fulfillment Stage</th>
+                    <th>Delivery Target</th>
+                    <th class="text-end">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in pending_orders %}
+                    <tr>
+                        <td><span class="fw-bold text-primary small">{{ order.order_id }}</span></td>
+                        <td><span class="small text-dark">{{ order.user.username|default:"Guest Checkout" }}</span></td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info px-2.5 py-1 text-uppercase small">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                        <td><span class="small text-muted text-truncate d-inline-block" style="max-width:200px;">{{ order.shipping_address }}</span></td>
+                        <td class="text-end fw-bold small text-dark">${{ order.total_amount }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted small py-4">No pending order processing queues.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Data island: Django renders JSON here; JS reads it — avoids linter errors inside script blocks -->
+<script id="chart-data" type="application/json">{{ daily_sales_json|safe }}</script>
+
+<!-- Chart.js Render -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var ctx = document.getElementById("dailySalesChart").getContext("2d");
+
+        // Read data from the JSON data island (no Django tags inside JS)
+        var dailyData = JSON.parse(document.getElementById("chart-data").textContent);
+        var labels   = dailyData.map(function(item) { return item.day; });
+        var revenues = dailyData.map(function(item) { return parseFloat(item.revenue); });
+        var orders   = dailyData.map(function(item) { return parseInt(item.orders_count, 10); });
+
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Gross Daily Revenue ($)",
+                        data: revenues,
+                        backgroundColor: "rgba(59, 130, 246, 0.75)",
+                        borderColor: "rgb(59, 130, 246)",
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        yAxisID: "y"
+                    },
+                    {
+                        label: "Orders Count",
+                        data: orders,
+                        type: "line",
+                        borderColor: "#10b981",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointBackgroundColor: "#10b981",
+                        yAxisID: "y1",
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "top" }
+                },
+                scales: {
+                    y: {
+                        type: "linear",
+                        display: true,
+                        position: "left",
+                        title: { display: true, text: "Revenue ($)" },
+                        grid: { color: "#f1f5f9" }
+                    },
+                    y1: {
+                        type: "linear",
+                        display: true,
+                        position: "right",
+                        title: { display: true, text: "Orders Count" },
+                        grid: { drawOnChartArea: false }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

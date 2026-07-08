@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}ShopSafe — Two-Factor Verification{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="card border border-light p-4 bg-white shadow-sm">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                <h3 class="fw-bold text-dark mt-2">Two-Factor Authentication</h3>
+                <p class="text-muted small">We've sent a 6-digit verification code to your registered email.</p>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-3" style="font-size:13px; border-radius:8px;">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-4 text-center">
+                    <label class="form-label fw-semibold text-muted small d-block mb-3">Verification Code</label>
+                    <input type="text" name="otp_code" maxlength="6" required autocomplete="off" class="form-control text-center fw-bold" 
+                           placeholder="0 0 0 0 0 0"
+                           style="font-size: 24px; letter-spacing: 8px; border-radius: 10px; max-width: 240px; margin: 0 auto;">
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-3">
+                    <i class="bi bi-unlock-fill me-2"></i>Verify and Login
+                </button>
+            </form>
+            
+            <hr class="border-light my-4">
+            
+            <div class="text-center">
+                <p class="small text-muted mb-0">Didn't receive the code? 
+                    <a href="{% url 'resend_otp' %}" class="fw-semibold text-decoration-none text-primary">Resend Code</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

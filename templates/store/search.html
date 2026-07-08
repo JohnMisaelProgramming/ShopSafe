@@ -1,53 +1,215 @@
 {% extends 'base.html' %}
 
-{% block title %}ShopSafe — Search Results for "{{ query }}"{% endblock %}
+{% block title %}ShopSafe — Advanced Product Search{% endblock %}
 
 {% block content %}
 <div class="mb-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-            <li class="breadcrumb-item active">Search</li>
+            <li class="breadcrumb-item active">Search Results</li>
         </ol>
     </nav>
-    <h2 class="fw-bold mb-1">Search Results</h2>
-    {% if query %}
-        <p class="text-muted mb-0">Showing results for "<strong class="text-primary">{{ query }}</strong>" — {{ products|length }} items found</p>
-    {% else %}
-        <p class="text-muted mb-0">Please enter a search query in the search bar above.</p>
-    {% endif %}
+    <h1 class="fw-bold"><i class="bi bi-search text-primary me-2"></i>Advanced Product Search</h1>
+    <p class="text-muted">Perform granular queries across category listings, specific hardware brands, and ratings.</p>
 </div>
 
-{% if query %}
-    <div class="row g-4">
-        {% for product in products %}
-            <div class="col-md-4 col-lg-3">
-                <div class="card h-100 border border-light">
-                    <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" alt="{{ product.name }}" style="height: 180px; border-radius: 12px 12px 0 0;">
-                    <div class="card-body d-flex flex-column">
-                        <span class="badge bg-secondary-subtle text-secondary align-self-start mb-2">{{ product.category }}</span>
-                        <h6 class="card-title fw-bold text-dark mb-2">{{ product.name }}</h6>
-                        <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:8 }}</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-light">
-                            <span class="fw-bold text-primary">${{ product.price }}</span>
-                            <span class="small {% if product.stock > 0 %}text-success{% else %}text-danger{% endif %}">
-                                {% if product.stock > 0 %}In stock{% else %}Out of Stock{% endif %}
-                            </span>
+<!-- Autocomplete Search Input Bar -->
+<div class="card p-4 rounded-4 shadow-sm border border-light bg-white mb-4 position-relative">
+    <form method="GET" action="{% url 'search' %}">
+        <label for="search-input" class="form-label fw-semibold">Keywords Search</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="search-input" name="q" placeholder="Search for camera, smart, router, key..." value="{{ query|default:'' }}" autocomplete="off" required>
+            <button class="btn btn-primary px-4 fw-semibold" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+        </div>
+        <!-- Suggestion Autocomplete Dropdown List -->
+        <div id="suggestions-box" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 1000; top: 82px; left: 0; right: 0; border-radius: 8px;"></div>
+    </form>
+</div>
+
+<div class="row g-4">
+    <!-- Filter Sidebar Column -->
+    <div class="col-lg-3">
+        <div class="card p-4 rounded-4 shadow-sm border border-light bg-white mb-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-funnel text-primary me-2"></i>Filter Options</h5>
+            <form method="GET" action="{% url 'search' %}">
+                <!-- Keep search query parameter -->
+                <input type="hidden" name="q" value="{{ query|default:'' }}">
+                
+                <!-- Category Select -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Category</label>
+                    <select class="form-select form-select-sm" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Brand Select -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Brand</label>
+                    <select class="form-select form-select-sm" name="brand">
+                        <option value="">All Brands</option>
+                        {% for br in brands %}
+                            <option value="{{ br }}" {% if selected_brand == br %}selected{% endif %}>{{ br }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Price Range -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Price Range ($)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number" class="form-control form-control-sm" name="min_price" placeholder="Min" value="{{ min_price|default:'' }}">
                         </div>
-                        
-                        <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline-primary w-100 mt-3 rounded-8 fw-semibold">View Details</a>
+                        <div class="col-6">
+                            <input type="number" class="form-control form-control-sm" name="max_price" placeholder="Max" value="{{ max_price|default:'' }}">
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% empty %}
-            <div class="col-12 text-center py-5 bg-white rounded-4 border border-light shadow-sm">
-                <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
-                <h4 class="fw-bold text-dark mt-3">No matching products found</h4>
-                <p class="text-muted">We couldn't find anything matching your search term. Try searching for "smart", "lock", "camera", or "router".</p>
-                <a href="{% url 'products' %}" class="btn btn-primary mt-2">View All Products</a>
-            </div>
-        {% endfor %}
+
+                <!-- Rating -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Minimum Rating</label>
+                    <select class="form-select form-select-sm" name="min_rating">
+                        <option value="">Any Rating</option>
+                        <option value="4.0" {% if min_rating == "4.0" %}selected{% endif %}>4.0+ Stars</option>
+                        <option value="4.5" {% if min_rating == "4.5" %}selected{% endif %}>4.5+ Stars</option>
+                        <option value="4.8" {% if min_rating == "4.8" %}selected{% endif %}>4.8+ Stars</option>
+                    </select>
+                </div>
+
+                <!-- Sorting -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Sort By</label>
+                    <select class="form-select form-select-sm" name="sort_by">
+                        <option value="">Relevance</option>
+                        <option value="price_asc" {% if sort_by == "price_asc" %}selected{% endif %}>Price: Low to High</option>
+                        <option value="price_desc" {% if sort_by == "price_desc" %}selected{% endif %}>Price: High to Low</option>
+                        <option value="rating" {% if sort_by == "rating" %}selected{% endif %}>Highest Rated</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary w-100 btn-sm rounded-pill mt-2" type="submit">Apply Filters</button>
+                <a href="{% url 'search' %}?q={{ query|default:'' }}" class="btn btn-outline-secondary w-100 btn-sm rounded-pill mt-2">Clear Filters</a>
+            </form>
+        </div>
     </div>
-{% endif %}
+
+    <!-- Search Results Column -->
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="small text-muted">
+                Showing results for "<strong>{{ query|default:'All' }}</strong>" — {{ page_obj.paginator.count }} item(s) found
+            </span>
+        </div>
+
+        <div class="row g-4">
+            {% for product in page_obj %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border border-light shadow-sm">
+                        <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" alt="{{ product.name }}" style="height: 180px;">
+                        <div class="card-body p-3 d-flex flex-column">
+                            <span class="badge bg-secondary-subtle text-secondary align-self-start mb-2 small">{{ product.category }}</span>
+                            <h6 class="card-title fw-bold text-dark mb-1">{{ product.name }}</h6>
+                            <p class="text-muted small mb-2">Brand: <strong>{{ product.brand }}</strong></p>
+                            <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:10 }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light">
+                                <span class="fw-bold text-primary">${{ product.price }}</span>
+                                <span class="small text-warning"><i class="bi bi-star-fill me-1"></i>{{ product.rating }}</span>
+                            </div>
+                            
+                            {% if product.stock <= 0 %}
+                                <button class="btn btn-sm btn-secondary w-100 mt-3 rounded-pill fw-semibold" disabled>Out of Stock</button>
+                            {% else %}
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline-primary w-100 mt-3 rounded-pill fw-semibold">View Details</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5 bg-white rounded-4 border border-light shadow-sm">
+                    <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="fw-bold text-dark mt-3">No matching products found</h4>
+                    <p class="text-muted">We couldn't find anything matching your filters. Try adjusting price limits or keywords.</p>
+                    <a href="{% url 'search' %}" class="btn btn-primary rounded-pill mt-2">Reset Search</a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3 me-2" href="?q={{ query|default:'' }}&category={{ selected_category }}&brand={{ selected_brand }}&min_price={{ min_price }}&max_price={{ max_price }}&min_rating={{ min_rating }}&sort_by={{ sort_by }}&page={{ page_obj.previous_page_number }}">
+                                <i class="bi bi-chevron-left me-1"></i>Previous
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3" href="?q={{ query|default:'' }}&category={{ selected_category }}&brand={{ selected_brand }}&min_price={{ min_price }}&max_price={{ max_price }}&min_rating={{ min_rating }}&sort_by={{ sort_by }}&page={{ page_obj.next_page_number }}">
+                                Next<i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Autocomplete JavaScript Event Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById('search-input');
+        const suggestionsBox = document.getElementById('suggestions-box');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                suggestionsBox.classList.add('d-none');
+                return;
+            }
+            
+            fetch(`/search/suggest/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const suggestions = data.suggestions;
+                    if (suggestions.length === 0) {
+                        suggestionsBox.classList.add('d-none');
+                        return;
+                    }
+                    
+                    suggestionsBox.innerHTML = '';
+                    suggestions.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = `/products/${item.id}/`;
+                        a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center small';
+                        a.innerHTML = `
+                            <span><i class="bi bi-search me-2 text-muted"></i><strong>${item.name}</strong></span>
+                            <span class="badge bg-primary-subtle text-primary">$${item.price}</span>
+                        `;
+                        suggestionsBox.appendChild(a);
+                    });
+                    
+                    suggestionsBox.classList.remove('d-none');
+                });
+        });
+        
+        // Hide list when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== searchInput) {
+                suggestionsBox.classList.add('d-none');
+            }
+        });
+    });
+</script>
 {% endblock %}

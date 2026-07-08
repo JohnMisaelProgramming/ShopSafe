@@ -12,27 +12,85 @@
                 <p class="text-muted small">Access your ShopSafe customer account</p>
             </div>
             
-            <form method="POST">
+            <form method="POST" id="login-form">
                 {% csrf_token %}
                 
                 {% for field in form %}
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-muted small">{{ field.label }}</label>
                         {{ field }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i>{{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                 {% endfor %}
+
+                {% if recaptcha_site_key %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-center">
+                            <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                        </div>
+                        {% if recaptcha_error %}
+                            <div class="text-danger small mt-2 text-center" id="recaptcha-error">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>{{ recaptcha_error }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
                 
                 <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-3 mt-3">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
                 </button>
             </form>
+
+            <div class="text-center mt-3">
+                <span class="badge bg-light text-muted border border-light py-2 px-3 fw-normal" style="font-size: 11px;">
+                    <i class="bi bi-shield-check text-success me-1"></i> Secured by Google reCAPTCHA v2
+                </span>
+            </div>
             
             <hr class="border-light my-4">
             
             <div class="text-center">
                 <p class="small text-muted mb-0">Don't have an account? <a href="{% url 'register' %}" class="fw-semibold text-decoration-none text-primary">Register Here</a></p>
+                <p class="small text-muted mb-0 mt-2"><a href="{% url 'forgot_password' %}" class="fw-semibold text-decoration-none text-secondary">Forgot Password?</a></p>
             </div>
         </div>
     </div>
 </div>
+
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('login-form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            const response = grecaptcha.getResponse();
+            if (!response || response.length === 0) {
+                event.preventDefault();
+                let errDiv = document.getElementById('recaptcha-error');
+                if (!errDiv) {
+                    errDiv = document.createElement('div');
+                    errDiv.id = 'recaptcha-error';
+                    errDiv.className = 'text-danger small mt-2 text-center';
+                    errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Please check the reCAPTCHA box before signing in.';
+                    const recaptchaWrapper = document.querySelector('.g-recaptcha');
+                    if (recaptchaWrapper) {
+                        recaptchaWrapper.parentNode.appendChild(errDiv);
+                    }
+                } else {
+                    errDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Please check the reCAPTCHA box before signing in.';
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+
 {% endblock %}

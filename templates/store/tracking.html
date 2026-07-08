@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Order Tracker — ShopSafe{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Order Tracking</li>
+        </ol>
+    </nav>
+    <h1 class="fw-bold"><i class="bi bi-geo text-primary me-2"></i>Live Order Tracker</h1>
+    <p class="text-muted">Enter your Order ID to track its fulfillment status timeline in real-time.</p>
+</div>
+
+<!-- Order Lookup Input -->
+<div class="card p-4 rounded-4 shadow-sm border border-light mb-4 bg-white">
+    <form method="GET" action="{% url 'order_tracking' %}">
+        <label for="order_id" class="form-label fw-semibold">Order ID</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="order_id" name="order_id" placeholder="ORD-YYYYMMDDHHMMSS-XXX" value="{{ order_id|default:'' }}" required>
+            <button class="btn btn-primary px-4 fw-semibold" type="submit"><i class="bi bi-search me-1"></i>Track Order</button>
+        </div>
+    </form>
+</div>
+
+{% if order %}
+<!-- Visual Timeline Tracker -->
+<div class="card p-4 rounded-4 shadow-sm border border-light mb-4 bg-white">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom border-light">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Status Timeline for {{ order.order_id }}</h4>
+            <span class="small text-muted">Placed on {{ order.created_at|date:"Y-m-d H:i:s" }}</span>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-success-subtle text-success px-3 py-2 fw-bold text-uppercase fs-6">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Visual Stepper Progress Bar -->
+    <div class="row position-relative text-center my-4">
+        <!-- Connecting Line background -->
+        <div class="position-absolute start-0 end-0 translate-middle-y" style="top:25px; height: 4px; background-color: #e9ecef; z-index: 1;"></div>
+
+        <!-- Processing Step — always active -->
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 bg-success text-white"
+                 style="width: 50px; height: 50px;">
+                <i class="bi bi-receipt fs-4"></i>
+            </div>
+            <h6 class="fw-bold mb-0 text-dark">Processing</h6>
+        </div>
+
+        <!-- Packing Step -->
+        {% with is_packing=order.status|lower %}
+        {% if is_packing == 'packing' or is_packing == 'shipping' or is_packing == 'delivered' %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 bg-success text-white"
+                 style="width: 50px; height: 50px;">
+                <i class="bi bi-box-seam fs-4"></i>
+            </div>
+        {% else %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                 style="width: 50px; height: 50px; background-color: #e9ecef; color: #6c757d;">
+                <i class="bi bi-box-seam fs-4"></i>
+            </div>
+        {% endif %}
+        {% endwith %}
+            <h6 class="fw-bold mb-0 text-dark">Packing</h6>
+        </div>
+
+        <!-- Shipping Step -->
+        {% with is_shipping=order.status|lower %}
+        {% if is_shipping == 'shipping' or is_shipping == 'delivered' %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 bg-success text-white"
+                 style="width: 50px; height: 50px;">
+                <i class="bi bi-truck fs-4"></i>
+            </div>
+        {% else %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                 style="width: 50px; height: 50px; background-color: #e9ecef; color: #6c757d;">
+                <i class="bi bi-truck fs-4"></i>
+            </div>
+        {% endif %}
+        {% endwith %}
+            <h6 class="fw-bold mb-0 text-dark">Shipped</h6>
+        </div>
+
+        <!-- Delivered Step -->
+        {% if order.status|lower == 'delivered' %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 bg-success text-white"
+                 style="width: 50px; height: 50px;">
+                <i class="bi bi-house-check fs-4"></i>
+            </div>
+        {% else %}
+        <div class="col-3 position-relative" style="z-index: 2;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                 style="width: 50px; height: 50px; background-color: #e9ecef; color: #6c757d;">
+                <i class="bi bi-house-check fs-4"></i>
+            </div>
+        {% endif %}
+            <h6 class="fw-bold mb-0 text-dark">Delivered</h6>
+        </div>
+    </div>
+
+    <!-- Timeline Event Log List -->
+    <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-clock-history me-1 text-primary"></i>Activity Log</h5>
+    <div class="list-group list-group-flush border-top border-light mb-4">
+        {% for hist in history %}
+            <div class="list-group-item px-0 py-3 d-flex align-items-start">
+                <div class="me-3">
+                    <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 fw-semibold text-uppercase">
+                        {{ hist.status }}
+                    </span>
+                </div>
+                <div class="flex-grow-1">
+                    <p class="mb-0 text-dark fw-semibold small">{{ hist.notes }}</p>
+                    <small class="text-muted">{{ hist.updated_at|date:"Y-m-d H:i:s" }}</small>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Items details inside tracking -->
+    <h5 class="fw-bold mb-3"><i class="bi bi-box me-1 text-primary"></i>Order Items</h5>
+    <div class="table-responsive">
+        <table class="table align-middle border-light">
+            <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th class="text-center">Quantity</th>
+                    <th class="text-end">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="rounded-3 border border-light object-fit-cover me-3" style="width: 48px; height: 48px;">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">{{ item.product.name }}</h6>
+                                    <small class="text-muted">{{ item.product.category }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center fw-bold">{{ item.quantity }}</td>
+                        <td class="text-end fw-bold">${{ item.price }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
