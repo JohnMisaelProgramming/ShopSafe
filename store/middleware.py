@@ -80,6 +80,18 @@ class NetWatchForwardingMiddleware:
                         conn.close()
                     except Exception:
                         pass
+                else:
+                    # Deployed Cloud Production: Query the NetWatch check-block HTTP API
+                    if self.api_url and self.api_key:
+                        try:
+                            check_url = self.api_url.replace('/api/ingest/', '/api/check-block/')
+                            headers = {'Authorization': f'Api-Key {self.api_key}'}
+                            resp = requests.get(check_url, params={'ip': ip}, headers=headers, timeout=2)
+                            if resp.status_code == 200:
+                                data = resp.json()
+                                is_whitelisted = data.get('whitelisted', False)
+                        except Exception:
+                            pass
             cache.set(cache_whitelist_key, is_whitelisted, timeout=300)
 
         # 3. Blocklist Check (with 5-minute memory cache backer)
@@ -103,6 +115,20 @@ class NetWatchForwardingMiddleware:
                         conn.close()
                     except Exception:
                         pass
+                else:
+                    # Deployed Cloud Production: Query the NetWatch check-block HTTP API
+                    if self.api_url and self.api_key:
+                        try:
+                            check_url = self.api_url.replace('/api/ingest/', '/api/check-block/')
+                            headers = {'Authorization': f'Api-Key {self.api_key}'}
+                            resp = requests.get(check_url, params={'ip': ip}, headers=headers, timeout=2)
+                            if resp.status_code == 200:
+                                data = resp.json()
+                                is_blocked = data.get('blocked', False)
+                                if data.get('whitelisted'):
+                                    cache.set(f"whitelisted_ip:{ip}", True, timeout=300)
+                        except Exception:
+                            pass
                 cache.set(cache_block_key, is_blocked, timeout=300)
 
         if is_blocked:
